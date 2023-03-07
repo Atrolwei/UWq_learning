@@ -1,14 +1,14 @@
 from agents_base import Agent
-import random
 from scipy.spatial import distance
 import numpy as np 
 from math import atan2,pi
-
+from utils import to_points
 
 class Elephant(Agent):
-    def __init__(self,goal,obs_range=5,style='moderate'):
+    def __init__(self,goal,field_size,obs_range=5,style='moderate'):
         super(Elephant,self).__init__()
         self.goal=goal
+        self.field_size=field_size
         # define the observation range of the agent
         self.obs_range=obs_range
         # give the agent a style therefore a changeable strategy
@@ -27,11 +27,12 @@ class Elephant(Agent):
 
     def _potential_field(self,obs):
         obs_range=self.obs_range
+        points=to_points(obs,self.field_size,16)
         # the force of the potential field
         force=np.array([0.0,0.0])
 
         # intrinsive force of the goal
-        ele_pos=obs['ele_pos']
+        ele_pos=points[0]
         delta_goal=np.array(self.goal)-np.array(ele_pos)
         delta_goal_norm=np.linalg.norm(delta_goal)
         force+=1/delta_goal_norm*delta_goal/delta_goal_norm
@@ -40,14 +41,15 @@ class Elephant(Agent):
         delta_force=np.array([0.0,0.0])
         K_go=self.K_go
         N_preyer_obs=0
-        for idx,preyer_pos in obs['preyers'].items():
+
+        for preyer_pos in points[1:]:
             if distance.euclidean(ele_pos,preyer_pos)<=obs_range:
                 # print(f'Preyer found, index: {idx}, position: {preyer_pos}')
                 N_preyer_obs+=1     # count the number of the preyers observed
                 delta_preyer=np.array(preyer_pos)-np.array(ele_pos)
                 delta_preyer_norm=np.linalg.norm(delta_preyer)
                 delta_force-=K_go*(1/delta_preyer_norm-1/obs_range)*delta_preyer/delta_preyer_norm
-        if N_preyer_obs!=0:
+        if N_preyer_obs>0:
             delta_force/=N_preyer_obs
         force+=delta_force      # the force is a 2 dim vector means the force induced by the goal and the preyers
         return force

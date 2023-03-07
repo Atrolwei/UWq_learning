@@ -14,11 +14,10 @@
 
 # -*- coding: utf-8 -*-
 
-import gym
-from gridworld import CliffWalkingWapper, FrozenLakeWapper
+from battle_field import BattleField
 from agent import QLearningAgent
 import time
-assert gym.__version__ == "0.18.0", "[Version WARNING] please try `pip install gym==0.18.0`"
+
 
 
 def run_episode(env, agent, render=False):
@@ -61,13 +60,16 @@ def test_episode(env, agent):
 def main():
     # env = gym.make("FrozenLake-v0", is_slippery=False)  # 0 left, 1 down, 2 right, 3 up
     # env = FrozenLakeWapper(env)
-
-    env = gym.make("CliffWalking-v0")  # 0 up, 1 right, 2 down, 3 left
-    env = CliffWalkingWapper(env)
+    field_size=4
+    N_preyers=3
+    ele_goal=(1,2)
+    episode_limit=15
+    env = BattleField(field_size, N_preyers, ele_goal, episode_limit)
+    # env = CliffWalkingWapper(env)
 
     agent = QLearningAgent(
-        obs_n=env.observation_space.n,
-        act_n=env.action_space.n,
+        obs_n=16**4,
+        act_n=4**3,
         learning_rate=0.1,
         gamma=0.9,
         e_greed=0.1)
