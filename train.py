@@ -27,7 +27,8 @@ def run_episode(env, agent, render=False):
     obs = env.reset()  # 重置环境, 重新开一局（即开始新的一个episode）
 
     while True:
-        action = agent.sample(obs)  # 根据算法选择一个动作
+        avail_actions=env.get_avail_agent_actions()
+        action = agent.sample(obs,avail_actions)  # 根据算法选择一个动作
         next_obs, reward, done, _ = env.step(action)  # 与环境进行一个交互
         # 训练 Q-learning算法
         agent.learn(obs, action, reward, next_obs, done)
@@ -68,8 +69,8 @@ def main():
     # env = CliffWalkingWapper(env)
 
     agent = QLearningAgent(
-        obs_n=16**4,
-        act_n=4**3,
+        obs_n=env.n_obss,
+        act_n=env.n_actions,
         learning_rate=0.1,
         gamma=0.9,
         e_greed=0.1)

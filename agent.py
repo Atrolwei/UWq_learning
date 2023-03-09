@@ -31,16 +31,18 @@ class QLearningAgent(object):
         self.Q = np.zeros((obs_n, act_n))
 
     # 根据输入观察值，采样输出的动作值，带探索
-    def sample(self, obs):
+    def sample(self, obs,avail_actions):
+
         if np.random.uniform(0, 1) < (1.0 - self.epsilon):  #根据table的Q值选动作
-            action = self.predict(obs)
+            action = self.predict(obs,avail_actions)
         else:
-            action = np.random.choice(self.act_n)  #有一定概率随机探索选取一个动作
+            action = np.random.choice(np.where(avail_actions == 1)[0])
         return action
 
     # 根据输入观察值，预测输出的动作值
-    def predict(self, obs):
+    def predict(self, obs,avail_actions):
         Q_list = self.Q[obs, :]
+        Q_list = Q_list * avail_actions
         maxQ = np.max(Q_list)
         action_list = np.where(Q_list == maxQ)[0]  # maxQ可能对应多个action
         action = np.random.choice(action_list)

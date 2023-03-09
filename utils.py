@@ -13,24 +13,34 @@ def to_xcoded_number(points,grid_size,xcimal=16):
 def num2dot(num,grid_size):
     return ((num-1)//grid_size,(num-1)%grid_size)
 
-def to_points(xcoded_number,grid_size,xcimal=16):
-    points=[]
+def to_points(xcoded_number,n_points,grid_size,xcimal=16):
+    points=[(0,0)]*n_points
+    idx=1
     while xcoded_number:
-        points.append(num2dot(xcoded_number%xcimal,grid_size))
+        points[-idx]=num2dot(xcoded_number%xcimal,grid_size)
         xcoded_number//=xcimal
-    return points[::-1]
+        idx+=1
+    return points
 
-
+def num2acts(num,n_acts,xcimal=4):
+    acts=[0]*n_acts
+    idx=1
+    while num:
+        acts[-idx]=num%xcimal
+        num//=xcimal
+        idx+=1
+    return acts
 
 if __name__ == '__main__':
     points=[(0,3),(2,2),(2,1),(0,0)]
+    n_points=len(points)
     grid_size=4
     xcimal=grid_size**2
     xcoded_number=to_xcoded_number(points,grid_size,xcimal)
 
     print(xcoded_number)
 
-    points=to_points(xcoded_number,grid_size,xcimal)
+    points=to_points(xcoded_number,n_points,grid_size,xcimal)
     print(points)
 
 

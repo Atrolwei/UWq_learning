@@ -7,14 +7,15 @@ from scipy.spatial import distance
 from env_base import Env
 from elephant import Elephant
 from preyers import Preyer
-from utils import to_xcoded_number, to_points, num2dot
+from utils import dot2num, to_xcoded_number, to_points, num2dot,num2acts
 
 
 class BattleField(Env):
     def __init__(self,field_size,N_preyers,ele_goal,episode_limit=15):
         super(BattleField,self).__init__()
         self.step_count=0
-
+        self.n_obss=16**(N_preyers+1)
+        self.n_actions=4**N_preyers
         self.field_size=field_size
         self.N_preyers=N_preyers
         self.ele_goal=ele_goal        # deafault goal of the elephant, set a input variable if need
@@ -33,6 +34,7 @@ class BattleField(Env):
         for num in nums:
             points.append(num2dot(num,self.field_size))
         self.ele_pos=points[0]
+        self.last_ele_pos=self.ele_pos
         self.preyers_pos=points[1:]
         xcoded_number=to_xcoded_number(points,self.field_size,16)
 
@@ -45,7 +47,8 @@ class BattleField(Env):
         status=self._update_pos(action)
         self.last_action=action
         self.step_count+=1
-        obs=to_xcoded_number(self.ele_pos,self.preyers_pos,self.field_size,16)
+        number2be_xcoded=([self.ele_pos]+self.preyers_pos)
+        obs=to_xcoded_number(number2be_xcoded,self.field_size,16)
         self.last_obs=obs
         done,info=self.if_done(status)
         reward=self.calc_reward(done,info)
@@ -59,22 +62,23 @@ class BattleField(Env):
 
         pos_set=set()
         pos_new=self.get_x_y(self.ele_pos,act_ele)
+        self.last_ele_pos=self.ele_pos
         self.ele_pos=pos_new
         pos_set.add(pos_new)
 
         # the action of the preyers
-        act_preyers=to_points(action,self.field_size,4)
+        act_preyers=num2acts(action,4)
         for idx,pos in enumerate(self.preyers_pos):
-            act=[2,4,6,8][act_preyers[idx][1]]
+            act=[2,4,6,8][act_preyers[idx]]
             pos_new=self.get_x_y(pos,act)
             # check if the new position is valid
             if pos_new not in pos_set:
                 pos_set.add(pos_new)
-                self.preyers[idx]=pos_new
+                self.preyers_pos[idx]=pos_new
             # if the new position is occupied by the elephant, the preyer stands still
             elif pos not in pos_set:
                 pos_set.add(pos)
-                self.preyers[idx]=pos
+                self.preyers_pos[idx]=pos
             # if the new position is occupied by the other preyer, the preyer crashes
             else:
                 status='crashed'
@@ -106,7 +110,7 @@ class BattleField(Env):
 
     def _if_surrounded(self):
         surrounded_list=[]
-        for pos in self.preyers:
+        for pos in self.preyers_pos:
             if distance.cityblock(self.ele_pos,pos)==1:
                 surrounded_list.append(pos)
         N_preyers=self.N_preyers
@@ -219,26 +223,37 @@ class BattleField(Env):
 
     def calc_reward(self,done,info):
         reward=0
+        last_ele_pos=self.last_ele_pos
+        ele_goal=self.ele_goal
+        ele_pos=self.ele_pos
+        vector0=np.array(last_ele_pos)-np.array(ele_goal)
+        vector1=np.array(last_ele_pos)-np.array(ele_pos)
+        num_vector=vector0.dot(vector1)
+        if num_vector:
+            reward=-num_vector/(np.linalg.norm(vector0)*np.linalg.norm(vector1))
+
         if not done:
-            return reward
+            return reward/20    # normalize the reward
         else:
             if 'Surrounded!' in info:
-                reward+=100
+                reward+=20
             if 'Ele Wins!' in info:
-                reward-=100
+                reward-=20
             if 'Crash!' in info:
-                reward-=50
+                reward-=10
             
-            return reward
+            return reward/20    # normalize the reward
 
 
-    def get_avail_agent_actions(self,agent_id):
-        preyer_pos=self.preyers_pos[agent_id]
+    def get_avail_agent_actions(self):
         avail_agent_actions=np.zeros(self.n_actions)
-        for idx, act in enumerate([2,4,6,8]):
-            pos_new=self.get_x_y(preyer_pos,act)
-            if pos_new!=preyer_pos:
-                avail_agent_actions[idx]=1
+        for preyer_pos in self.preyers_pos:
+            for act in [2,4,6,8]:
+                pos_new=self.get_x_y(preyer_pos,act)
+                if pos_new!=preyer_pos:
+                    # avail_agent_actions[idx]=1
+                    num_pos_new=dot2num(pos_new,self.field_size)
+                    avail_agent_actions[num_pos_new-1]=1
         return avail_agent_actions      # return a one-hot form action
 
 
@@ -259,7 +274,7 @@ if __name__ == '__main__':
         action1=preyer1.sample(obs)
         action2=preyer2.sample(obs)
         action3=preyer3.sample(obs)
-        action={-1:int(ele_agent.sample(obs)),1:action1,2:action2,3:action3}
+        # action={-1:int(ele_agent.sample(obs)),1:action1,2:action2,3:action3}
         obs,reward,done,info=env.step(action)
         if done==True:
             result_info=''

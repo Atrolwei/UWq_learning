@@ -27,7 +27,8 @@ class Elephant(Agent):
 
     def _potential_field(self,obs):
         obs_range=self.obs_range
-        points=to_points(obs,self.field_size,16)
+        points=to_points(obs,4,self.field_size,16)
+        print(points)
         # the force of the potential field
         force=np.array([0.0,0.0])
 
@@ -35,8 +36,9 @@ class Elephant(Agent):
         ele_pos=points[0]
         delta_goal=np.array(self.goal)-np.array(ele_pos)
         delta_goal_norm=np.linalg.norm(delta_goal)
-        force+=1/delta_goal_norm*delta_goal/delta_goal_norm
-
+        if delta_goal_norm:
+            force+=1/delta_goal_norm*delta_goal/delta_goal_norm
+    
         # resistance forces
         delta_force=np.array([0.0,0.0])
         K_go=self.K_go
@@ -48,6 +50,8 @@ class Elephant(Agent):
                 N_preyer_obs+=1     # count the number of the preyers observed
                 delta_preyer=np.array(preyer_pos)-np.array(ele_pos)
                 delta_preyer_norm=np.linalg.norm(delta_preyer)
+                if not delta_preyer_norm:
+                    print(f'delta_preyer_norm is 0, preyer_pos: {preyer_pos}, ele_pos: {ele_pos}')
                 delta_force-=K_go*(1/delta_preyer_norm-1/obs_range)*delta_preyer/delta_preyer_norm
         if N_preyer_obs>0:
             delta_force/=N_preyer_obs
