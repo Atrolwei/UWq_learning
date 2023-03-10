@@ -7,7 +7,7 @@ from scipy.spatial import distance
 from env_base import Env
 from elephant import Elephant
 from preyers import Preyer
-from utils import dot2num, to_xcoded_number, to_points, num2dot,num2acts
+from utils import to_xcoded_number, num2dot,num2acts
 
 
 class BattleField(Env):
@@ -23,6 +23,7 @@ class BattleField(Env):
 
         self.ele_agent=Elephant(ele_goal,field_size,obs_range=1,style='aggressive')      # the style can be choose from 'aggressive', 'moderate' and 'conservative'
         self.last_obs=None
+        self.last_action=None
 
 
     def reset(self):
@@ -61,7 +62,7 @@ class BattleField(Env):
         act_ele=self.ele_agent.sample(self.last_obs)
 
         pos_set=set()
-        pos_new=self.get_x_y(self.ele_pos,act_ele)
+        pos_new=self.get_x_y('ele',self.ele_pos,act_ele)
         self.last_ele_pos=self.ele_pos
         self.ele_pos=pos_new
         pos_set.add(pos_new)
@@ -70,7 +71,7 @@ class BattleField(Env):
         act_preyers=num2acts(action,4)
         for idx,pos in enumerate(self.preyers_pos):
             act=[2,4,6,8][act_preyers[idx]]
-            pos_new=self.get_x_y(pos,act)
+            pos_new=self.get_x_y('preyer',pos,act)
             # check if the new position is valid
             if pos_new not in pos_set:
                 pos_set.add(pos_new)
@@ -168,7 +169,7 @@ class BattleField(Env):
         return False
 
 
-    def get_x_y(self,pos,act):
+    def get_x_y(self,side,pos,act):
         x,y=pos
         x_old,y_old=pos
 
@@ -210,6 +211,11 @@ class BattleField(Env):
         elif y<0:
             y=0
             x=x_old
+        if side!='ele':
+            ele_x,ele_y=self.ele_pos
+            if x==ele_x and y==ele_y:
+                x=x_old
+                y=y_old
         return x,y
 
 
@@ -247,41 +253,42 @@ class BattleField(Env):
 
     def get_avail_agent_actions(self):
         avail_agent_actions=np.zeros(self.n_actions)
-        for preyer_pos in self.preyers_pos:
-            for act in [2,4,6,8]:
-                pos_new=self.get_x_y(preyer_pos,act)
-                if pos_new!=preyer_pos:
-                    # avail_agent_actions[idx]=1
-                    num_pos_new=dot2num(pos_new,self.field_size)
-                    avail_agent_actions[num_pos_new-1]=1
+        idx=0
+        for act_num in range(self.n_actions):
+            acts=num2acts(act_num,self.N_preyers)
+            for preyer_idx,act in enumerate(acts):
+                pos_new=self.get_x_y('preyer',self.preyers_pos[preyer_idx],[2,4,6,8][act])
+                if pos_new!=self.preyers_pos[preyer_idx]:
+                    avail_agent_actions[act_num]=1
+            idx+=1
         return avail_agent_actions      # return a one-hot form action
 
 
 
 
-if __name__ == '__main__':
-    random.seed(123)
-    goal=(8,8)
-    env=BattleField(9,3,goal)
-    obs=env.reset()
+# if __name__ == '__main__':
+#     random.seed(123)
+#     goal=(8,8)
+#     env=BattleField(9,3,goal)
+#     obs=env.reset()
 
-    preyer1=Preyer('P1',1,obs)
-    preyer2=Preyer('P2',2,obs)
-    preyer3=Preyer('P3',3,obs)
-    for i in range(10):
-        print("=============================================")
-        env.print_field()
-        action1=preyer1.sample(obs)
-        action2=preyer2.sample(obs)
-        action3=preyer3.sample(obs)
-        # action={-1:int(ele_agent.sample(obs)),1:action1,2:action2,3:action3}
-        obs,reward,done,info=env.step(action)
-        if done==True:
-            result_info=''
-            for res_info in info:
-                result_info+=res_info
-            print(f'done and the result is {result_info}')
-            env.print_field()
-            break
+#     preyer1=Preyer('P1',1,obs)
+#     preyer2=Preyer('P2',2,obs)
+#     preyer3=Preyer('P3',3,obs)
+#     for i in range(10):
+#         print("=============================================")
+#         env.print_field()
+#         action1=preyer1.sample(obs)
+#         action2=preyer2.sample(obs)
+#         action3=preyer3.sample(obs)
+#         # action={-1:int(ele_agent.sample(obs)),1:action1,2:action2,3:action3}
+#         obs,reward,done,info=env.step(action)
+#         if done==True:
+#             result_info=''
+#             for res_info in info:
+#                 result_info+=res_info
+#             print(f'done and the result is {result_info}')
+#             env.print_field()
+#             break
     
     

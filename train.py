@@ -75,7 +75,7 @@ def main():
         gamma=0.9,
         e_greed=0.1)
 
-    is_render = False
+    is_render = True
     for episode in range(500):
         ep_reward, ep_steps = run_episode(env, agent, is_render)
         print('Episode %s: steps = %s , reward = %.1f' % (episode, ep_steps,
