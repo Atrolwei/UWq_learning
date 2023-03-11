@@ -28,7 +28,7 @@ class Elephant(Agent):
     def _potential_field(self,obs):
         obs_range=self.obs_range
         points=to_points(obs,4,self.field_size,16)
-        print(points)
+        # print(points)
         # the force of the potential field
         force=np.array([0.0,0.0])
 

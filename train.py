@@ -47,7 +47,8 @@ def test_episode(env, agent):
     total_reward = 0
     obs = env.reset()
     while True:
-        action = agent.predict(obs)  # greedy
+        avail_actions=env.get_avail_agent_actions()
+        action = agent.predict(obs,avail_actions)  # greedy
         next_obs, reward, done, _ = env.step(action)
         total_reward += reward
         obs = next_obs
@@ -76,7 +77,7 @@ def main():
         e_greed=0.1)
 
     is_render = True
-    for episode in range(500):
+    for episode in range(5000):
         ep_reward, ep_steps = run_episode(env, agent, is_render)
         print('Episode %s: steps = %s , reward = %.1f' % (episode, ep_steps,
                                                           ep_reward))

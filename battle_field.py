@@ -252,15 +252,14 @@ class BattleField(Env):
 
 
     def get_avail_agent_actions(self):
-        avail_agent_actions=np.zeros(self.n_actions)
-        idx=0
+        avail_agent_actions=np.ones(self.n_actions)
         for act_num in range(self.n_actions):
             acts=num2acts(act_num,self.N_preyers)
             for preyer_idx,act in enumerate(acts):
                 pos_new=self.get_x_y('preyer',self.preyers_pos[preyer_idx],[2,4,6,8][act])
-                if pos_new!=self.preyers_pos[preyer_idx]:
-                    avail_agent_actions[act_num]=1
-            idx+=1
+                if pos_new==self.preyers_pos[preyer_idx]:
+                    avail_agent_actions[act_num]=0
+                    break
         return avail_agent_actions      # return a one-hot form action
 
 
