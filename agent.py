@@ -1,19 +1,3 @@
-#   Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# -*- coding: utf-8 -*-
-
 import numpy as np
 
 
@@ -24,31 +8,27 @@ class QLearningAgent(object):
                  learning_rate=0.01,
                  gamma=0.9,
                  e_greed=0.1):
-        self.act_n = act_n  # 动作维度，有几个动作可选
-        self.lr = learning_rate  # 学习率
-        self.gamma = gamma  # reward的衰减率
-        self.epsilon = e_greed  # 按一定概率随机选动作
+        self.act_n = act_n
+        self.lr = learning_rate
+        self.gamma = gamma
+        self.epsilon = e_greed
         self.Q = np.zeros((obs_n, act_n))
 
-    # 根据输入观察值，采样输出的动作值，带探索
     def sample(self, obs, avail_actions):
-
-        if np.random.uniform(0, 1) < (1.0 - self.epsilon):  # 根据table的Q值选动作
+        if np.random.uniform(0, 1) < (1.0 - self.epsilon):
             action = self.predict(obs, avail_actions)
         else:
             action = np.random.choice(np.where(avail_actions == 1)[0])
         return action
 
-    # 根据输入观察值，预测输出的动作值
     def predict(self, obs, avail_actions):
         Q_list = self.Q[obs, :]
-        Q_list = Q_list + avail_actions*1000
+        Q_list = Q_list + avail_actions*100
         maxQ = np.max(Q_list)
         action_list = np.where(Q_list == maxQ)[0]  # maxQ可能对应多个action
         action = np.random.choice(action_list)
         return action
 
-    # 学习方法，也就是更新Q-table的方法
     def learn(self, obs, action, reward, next_obs, done):
         """ off-policy
             obs: 交互前的obs, s_t
@@ -59,19 +39,17 @@ class QLearningAgent(object):
         """
         predict_Q = self.Q[obs, action]
         if done:
-            target_Q = reward  # 没有下一个状态了
+            target_Q = reward
         else:
             target_Q = reward + self.gamma * np.max(
-                self.Q[next_obs, :])  # Q-learning
-        self.Q[obs, action] += self.lr * (target_Q - predict_Q)  # 修正q
+                self.Q[next_obs, :])
+        self.Q[obs, action] += self.lr * (target_Q - predict_Q)
 
-    # 把 Q表格 的数据保存到文件中
     def save(self):
         npy_file = './q_table.npy'
         np.save(npy_file, self.Q)
         print(npy_file + ' saved.')
 
-    # 从文件中读取数据到 Q表格
     def restore(self, npy_file='./q_table.npy'):
         self.Q = np.load(npy_file)
         print(npy_file + ' loaded.')

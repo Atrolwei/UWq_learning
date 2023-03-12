@@ -1,23 +1,6 @@
-#   Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# -*- coding: utf-8 -*-
-
 from battle_field import BattleField
 from agent import QLearningAgent
 import time
-
 
 
 def run_episode(env, agent, render=False):
@@ -60,24 +43,21 @@ def test_episode(env, agent):
 
 
 def main():
-    # env = gym.make("FrozenLake-v0", is_slippery=False)  # 0 left, 1 down, 2 right, 3 up
-    # env = FrozenLakeWapper(env)
     field_size=4
     N_preyers=3
     ele_goal=(1,2)
     episode_limit=15
     env = BattleField(field_size, N_preyers, ele_goal, episode_limit)
-    # env = CliffWalkingWapper(env)
 
     agent = QLearningAgent(
         obs_n=env.n_obss,
         act_n=env.n_actions,
         learning_rate=0.1,
         gamma=0.9,
-        e_greed=0.1)
+        e_greed=0.3)
 
-    is_render = True
-    for episode in range(5000):
+    is_render = False
+    for episode in range(10000):
         ep_reward, ep_steps = run_episode(env, agent, is_render)
         print('Episode %s: steps = %s , reward = %.1f' % (episode, ep_steps,
                                                           ep_reward))
@@ -89,6 +69,7 @@ def main():
             is_render = False
     # 训练结束，查看算法效果
     test_episode(env, agent)
+    agent.save()
 
 
 if __name__ == "__main__":

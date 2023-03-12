@@ -25,22 +25,28 @@ class BattleField(Env):
         self.last_obs=None
         self.last_action=None
 
-
-    def reset(self):
-        # randomly put the preyers and the elephant on the field
-        self.step_count=0
-
+    def sample_points(self):
         nums=random.sample(range(self.field_size**2),self.N_preyers+1)
         points=[]
         for num in nums:
             points.append(num2dot(num,self.field_size))
+        return points
+
+    def reset(self):
+        # randomly put the preyers and the elephant on the field
+        self.step_count=0
+        points=self.sample_points()
+        while points[0]==self.ele_goal:
+            points=self.sample_points()
+
+        # assgin the initial position of the elephant and the preyers
         self.ele_pos=points[0]
         self.last_ele_pos=self.ele_pos
         self.preyers_pos=points[1:]
+
+        # transform the position of the elephant and the preyers to a xcoded number
         xcoded_number=to_xcoded_number(points,self.field_size,16)
-
         self.last_obs=xcoded_number
-
         return xcoded_number    # return the xcoded number of the initial state
 
 
@@ -68,7 +74,7 @@ class BattleField(Env):
         pos_set.add(pos_new)
 
         # the action of the preyers
-        act_preyers=num2acts(action,4)
+        act_preyers=num2acts(action,self.N_preyers)
         for idx,pos in enumerate(self.preyers_pos):
             act=[2,4,6,8][act_preyers[idx]]
             pos_new=self.get_x_y('preyer',pos,act)
@@ -168,7 +174,6 @@ class BattleField(Env):
             return True
         return False
 
-
     def get_x_y(self,side,pos,act):
         x,y=pos
         x_old,y_old=pos
@@ -237,12 +242,14 @@ class BattleField(Env):
         num_vector=vector0.dot(vector1)
         if num_vector:
             reward=-num_vector/(np.linalg.norm(vector0)*np.linalg.norm(vector1))
+        # else:
+        #     reward-=1
 
         if not done:
             return reward/20    # normalize the reward
         else:
             if 'Surrounded!' in info:
-                reward+=20
+                reward+=40
             if 'Ele Wins!' in info:
                 reward-=20
             if 'Crash!' in info:
