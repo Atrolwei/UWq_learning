@@ -1,4 +1,4 @@
-from battle_field import BattleField
+from battle_field import BattleField, FieldWrapper
 from agent import QLearningAgent
 import time
 
@@ -48,7 +48,7 @@ def main():
     ele_goal=(1,2)
     episode_limit=15
     env = BattleField(field_size, N_preyers, ele_goal, episode_limit)
-
+    env = FieldWrapper(env)
     agent = QLearningAgent(
         obs_n=env.n_obss,
         act_n=env.n_actions,

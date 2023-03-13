@@ -2,7 +2,7 @@ from agents_base import Agent
 from scipy.spatial import distance
 import numpy as np 
 from math import atan2,pi
-from utils import to_points
+
 
 class Elephant(Agent):
     def __init__(self,goal,field_size,obs_range=5,style='moderate'):
@@ -27,13 +27,12 @@ class Elephant(Agent):
 
     def _potential_field(self,obs):
         obs_range=self.obs_range
-        points=to_points(obs,4,self.field_size,16)
-        # print(points)
+
         # the force of the potential field
         force=np.array([0.0,0.0])
 
         # intrinsive force of the goal
-        ele_pos=points[0]
+        ele_pos=obs[0]
         delta_goal=np.array(self.goal)-np.array(ele_pos)
         delta_goal_norm=np.linalg.norm(delta_goal)
         if delta_goal_norm:
@@ -44,7 +43,7 @@ class Elephant(Agent):
         K_go=self.K_go
         N_preyer_obs=0
 
-        for preyer_pos in points[1:]:
+        for preyer_pos in obs[1:]:
             if distance.euclidean(ele_pos,preyer_pos)<=obs_range:
                 # print(f'Preyer found, index: {idx}, position: {preyer_pos}')
                 N_preyer_obs+=1     # count the number of the preyers observed

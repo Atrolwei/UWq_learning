@@ -1,5 +1,6 @@
-from battle_field import BattleField
+from battle_field import BattleField,FieldWrapper
 from agent import QLearningAgent
+from random_agent import RandomAgent
 import time
 
 def test_episode(env, agent):
@@ -17,6 +18,7 @@ def test_episode(env, agent):
         if done:
             print('test reward = %.1f' % (total_reward))
             break
+    return total_reward
 
 
 def main():
@@ -25,16 +27,23 @@ def main():
     ele_goal=(1,2)
     episode_limit=15
     env = BattleField(field_size, N_preyers, ele_goal, episode_limit)
+    env= FieldWrapper(env)
+    # agent = QLearningAgent(
+    #     obs_n=env.n_obss,
+    #     act_n=env.n_actions,
+    #     learning_rate=0.1,
+    #     gamma=0.8,
+    #     e_greed=0.2)
+    # agent.restore()
+    agent=RandomAgent(env.n_actions)
 
-    agent = QLearningAgent(
-        obs_n=env.n_obss,
-        act_n=env.n_actions,
-        learning_rate=0.1,
-        gamma=0.8,
-        e_greed=0.2)
-    agent.restore()
-    for _ in range(5):
-        test_episode(env, agent)
+    # num_of_test
+    num_of_test = 10
+    total_reward = 0
+    for _ in range(num_of_test):
+        reward=test_episode(env, agent)
+        total_reward += reward
+    print('average reward = %.1f' % (total_reward / num_of_test))
 
 
 if __name__ == "__main__":

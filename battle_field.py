@@ -13,7 +13,7 @@ from utils import to_xcoded_number, num2dot,num2acts
 class BattleField(Env):
     def __init__(self,field_size,N_preyers,ele_goal,episode_limit=15):
         super(BattleField,self).__init__()
-        self.step_count=0
+
         self.n_obss=16**(N_preyers+1)
         self.n_actions=4**N_preyers
         self.field_size=field_size
@@ -22,61 +22,61 @@ class BattleField(Env):
         self.episode_limit=episode_limit
 
         self.ele_agent=Elephant(ele_goal,field_size,obs_range=1,style='aggressive')      # the style can be choose from 'aggressive', 'moderate' and 'conservative'
+        self.step_count=0
         self.last_obs=None
         self.last_action=None
 
     def sample_points(self):
+        # sample (N_preyers+1) points from the field as a number list
         nums=random.sample(range(self.field_size**2),self.N_preyers+1)
-        points=[]
-        for num in nums:
-            points.append(num2dot(num,self.field_size))
+        # transfer the number list to a point list using the function num2dot
+        points=[num2dot(num,self.field_size) for num in nums]
         return points
 
     def reset(self):
         # randomly put the preyers and the elephant on the field
-        self.step_count=0
         points=self.sample_points()
         while points[0]==self.ele_goal:
             points=self.sample_points()
 
         # assgin the initial position of the elephant and the preyers
         self.ele_pos=points[0]
-        self.last_ele_pos=self.ele_pos
         self.preyers_pos=points[1:]
 
-        # transform the position of the elephant and the preyers to a xcoded number
-        xcoded_number=to_xcoded_number(points,self.field_size,16)
-        self.last_obs=xcoded_number
-        return xcoded_number    # return the xcoded number of the initial state
+        # reset the step count and the last observation and action
+        self.step_count=0
+        self.last_obs=points
+        self.last_action=None
+        return points    # return the xcoded number of the initial state
 
 
     def step(self,action):
         status=self._update_pos(action)
-        self.last_action=action
-        self.step_count+=1
-        number2be_xcoded=([self.ele_pos]+self.preyers_pos)
-        obs=to_xcoded_number(number2be_xcoded,self.field_size,16)
-        self.last_obs=obs
+        obs=[self.ele_pos]+self.preyers_pos
+        
         done,info=self.if_done(status)
         reward=self.calc_reward(done,info)
+
+        self.step_count+=1
+        self.last_obs=obs
+        self.last_action=action
         return obs,reward,done,info
 
 
-    def _update_pos(self,action):
+    def _update_pos(self,action_preyers):
         status='normal'
-        # the action of the elephant
-        act_ele=self.ele_agent.sample(self.last_obs)
 
         pos_set=set()
-        pos_new=self.get_x_y('ele',self.ele_pos,act_ele)
-        self.last_ele_pos=self.ele_pos
-        self.ele_pos=pos_new
-        pos_set.add(pos_new)
+
+        # update the elephant's position
+        act_ele=self.ele_agent.sample(self.last_obs)
+        ele_pos_new=self.get_x_y('ele',self.ele_pos,act_ele)
+        self.ele_pos=ele_pos_new
+        pos_set.add(ele_pos_new)
 
         # the action of the preyers
-        act_preyers=num2acts(action,self.N_preyers)
         for idx,pos in enumerate(self.preyers_pos):
-            act=[2,4,6,8][act_preyers[idx]]
+            act=action_preyers[idx]
             pos_new=self.get_x_y('preyer',pos,act)
             # check if the new position is valid
             if pos_new not in pos_set:
@@ -133,9 +133,9 @@ class BattleField(Env):
                     else:
                         edge_len=np.linalg.norm(
                             np.array(surrounded_list[idx])-np.array(surrounded_list[0]))
-                        edge_len_list.append(edge_len) 
+                        edge_len_list.append(edge_len)
                 max_len=np.array(edge_len_list).max()
-                if abs(max_len-2)<1e-3 or abs(max_len-2*np.sqrt(2))<1e-3:
+                if abs(max_len-2)<1e-3:
                     return True
                 else:
                     return False
@@ -164,7 +164,7 @@ class BattleField(Env):
             return True
 
     def _if_time_out(self):
-        if self.step_count>10:
+        if self.step_count>self.episode_limit:
             return True
         else:
             return False
@@ -216,9 +216,8 @@ class BattleField(Env):
         elif y<0:
             y=0
             x=x_old
-        if side!='ele':
-            ele_x,ele_y=self.ele_pos
-            if x==ele_x and y==ele_y:
+        if side=='preyer':
+            if (x,y)==self.ele_pos:
                 x=x_old
                 y=y_old
         return x,y
@@ -234,7 +233,7 @@ class BattleField(Env):
 
     def calc_reward(self,done,info):
         reward=0
-        last_ele_pos=self.last_ele_pos
+        last_ele_pos=self.last_obs[0]   # the last position of the elephant is recoded in the last_obs
         ele_goal=self.ele_goal
         ele_pos=self.ele_pos
         vector0=np.array(last_ele_pos)-np.array(ele_goal)
@@ -270,31 +269,37 @@ class BattleField(Env):
         return avail_agent_actions      # return a one-hot form action
 
 
+class FieldWrapper:
+    def __init__(self,env) -> None:
+        self.env=env
+        self.field_size=env.field_size
+        self.N_preyers=env.N_preyers
+        self.n_obss=env.n_obss
+        self.n_actions=env.n_actions
+    
 
+    def reset(self):
+        points=self.env.reset()
+        # transform the position of the elephant and the preyers to a xcoded number
+        xcoded_number=to_xcoded_number(points,self.field_size,16)
+        return xcoded_number
+    
+    def step(self,action):
+        # the action of the preyers
+        act_preyers=num2acts(action,self.N_preyers)
+        act_preyers=[[2,4,6,8][act] for act in act_preyers]
+        obs,reward,done,info=self.env.step(act_preyers)
+        # transform the position of the elephant and the preyers to a xcoded number
+        if 'Crash!' in info:
+            return None,reward,done,info
+        else:
+            obs=to_xcoded_number(obs,self.field_size,16)
+            return obs,reward,done,info
+        
+    def get_avail_agent_actions(self):
+        return self.env.get_avail_agent_actions()
 
-# if __name__ == '__main__':
-#     random.seed(123)
-#     goal=(8,8)
-#     env=BattleField(9,3,goal)
-#     obs=env.reset()
-
-#     preyer1=Preyer('P1',1,obs)
-#     preyer2=Preyer('P2',2,obs)
-#     preyer3=Preyer('P3',3,obs)
-#     for i in range(10):
-#         print("=============================================")
-#         env.print_field()
-#         action1=preyer1.sample(obs)
-#         action2=preyer2.sample(obs)
-#         action3=preyer3.sample(obs)
-#         # action={-1:int(ele_agent.sample(obs)),1:action1,2:action2,3:action3}
-#         obs,reward,done,info=env.step(action)
-#         if done==True:
-#             result_info=''
-#             for res_info in info:
-#                 result_info+=res_info
-#             print(f'done and the result is {result_info}')
-#             env.print_field()
-#             break
+    def render(self):
+        self.env.render()
     
     
