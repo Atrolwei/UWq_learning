@@ -28,14 +28,14 @@ def main():
     episode_limit=15
     env = BattleField(field_size, N_preyers, ele_goal, episode_limit)
     env= FieldWrapper(env)
-    # agent = QLearningAgent(
-    #     obs_n=env.n_obss,
-    #     act_n=env.n_actions,
-    #     learning_rate=0.1,
-    #     gamma=0.8,
-    #     e_greed=0.2)
-    # agent.restore()
-    agent=RandomAgent(env.n_actions)
+    agent = QLearningAgent(
+        obs_n=env.n_obss,
+        act_n=env.n_actions,
+        learning_rate=0.1,
+        gamma=0.8,
+        e_greed=0.2)
+    agent.restore()
+    # agent=RandomAgent(env.n_actions)
 
     # num_of_test
     num_of_test = 10

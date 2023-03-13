@@ -15,7 +15,7 @@ class BattleField(Env):
         super(BattleField,self).__init__()
 
         self.n_obss=16**(N_preyers+1)
-        self.n_actions=4**N_preyers
+        self.n_actions=5**N_preyers
         self.field_size=field_size
         self.N_preyers=N_preyers
         self.ele_goal=ele_goal        # deafault goal of the elephant, set a input variable if need
@@ -260,9 +260,9 @@ class BattleField(Env):
     def get_avail_agent_actions(self):
         avail_agent_actions=np.ones(self.n_actions)
         for act_num in range(self.n_actions):
-            acts=num2acts(act_num,self.N_preyers)
+            acts=num2acts(act_num,self.N_preyers,xcimal=5)
             for preyer_idx,act in enumerate(acts):
-                pos_new=self.get_x_y('preyer',self.preyers_pos[preyer_idx],[2,4,6,8][act])
+                pos_new=self.get_x_y('preyer',self.preyers_pos[preyer_idx],[2,4,5,6,8][act])
                 if pos_new==self.preyers_pos[preyer_idx]:
                     avail_agent_actions[act_num]=0
                     break
@@ -286,8 +286,8 @@ class FieldWrapper:
     
     def step(self,action):
         # the action of the preyers
-        act_preyers=num2acts(action,self.N_preyers)
-        act_preyers=[[2,4,6,8][act] for act in act_preyers]
+        act_preyers=num2acts(action,self.N_preyers,5)
+        act_preyers=[[2,4,5,6,8][act] for act in act_preyers]
         obs,reward,done,info=self.env.step(act_preyers)
         # transform the position of the elephant and the preyers to a xcoded number
         if 'Crash!' in info:
