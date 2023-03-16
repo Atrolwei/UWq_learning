@@ -67,12 +67,7 @@ class BattleField(Env):
         status='normal'
 
         pos_set=set()
-
-        # update the elephant's position
-        act_ele=self.ele_agent.sample(self.last_obs)
-        ele_pos_new=self.get_x_y('ele',self.ele_pos,act_ele)
-        self.ele_pos=ele_pos_new
-        pos_set.add(ele_pos_new)
+        pos_set.add(self.ele_pos)
 
         # the action of the preyers
         for idx,pos in enumerate(self.preyers_pos):
@@ -91,6 +86,13 @@ class BattleField(Env):
                 status='crashed'
                 print('ERROR! Preyer Crashes!')
                 break
+            
+        if not status=='crashed':
+            obs=[self.ele_pos]+self.preyers_pos
+            # update the elephant's position
+            act_ele=self.ele_agent.sample(obs)
+            ele_pos_new=self.get_x_y('ele',self.ele_pos,act_ele)
+            self.ele_pos=ele_pos_new
         return status
 
 
