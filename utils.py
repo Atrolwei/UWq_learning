@@ -31,21 +31,30 @@ def num2acts(num,n_acts,xcimal=4):
         idx+=1
     return acts
 
-if __name__ == '__main__':
-    points=[(3,3),(3,3),(3,3),(3,3)]
-    n_points=len(points)
-    grid_size=4
-    xcimal=grid_size**2
-    xcoded_number=to_xcoded_number(points,grid_size,xcimal)
+def acts2num(acts,xcimal=5):
+    num=0
+    acts=acts[::-1]
+    for idx,act in enumerate(acts):
+        num=num+act*xcimal**idx
+    return num
 
-    print(xcoded_number)
-    # xcoded_number=37364
-    # n_points=4
+if __name__ == '__main__':
+    # points=[(3,3),(3,3),(3,3),(3,3)]
+    # n_points=len(points)
     # grid_size=4
     # xcimal=grid_size**2
-    points_new=to_points(xcoded_number,n_points,grid_size,xcimal)
-    print(points_new)
+    # xcoded_number=to_xcoded_number(points,grid_size,xcimal)
 
+    # print(xcoded_number)
+    # # xcoded_number=37364
+    # # n_points=4
+    # # grid_size=4
+    # # xcimal=grid_size**2
+    # points_new=to_points(xcoded_number,n_points,grid_size,xcimal)
+    # print(points_new)
+    acts=[0,0,0]
+    print(acts2num(acts,xcimal=5))
+    print(num2acts(acts2num(acts,xcimal=5),3,xcimal=5))
 
 
 

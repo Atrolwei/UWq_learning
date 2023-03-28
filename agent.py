@@ -56,7 +56,8 @@ class QLearningAgent(object):
 
 
 from field_state import FieldState
-from utils import to_xcoded_number
+from utils import to_points,to_xcoded_number,num2acts
+
 
 class QLearningTacitAgent(object):
     def __init__(self,
@@ -78,21 +79,37 @@ class QLearningTacitAgent(object):
         self.N_preyers=N_preyers
         self.ele_goal=ele_goal
         self.field_state=FieldState(field_size,N_preyers,ele_goal)
+        self.last_predicted_actions=None
 
-    def unify(self,obs):
-        self.field_state.reset(obs)
+    def unify(self,obs):    # obs here is the full obs which can be got by communication
+        points=to_points(obs,self.N_preyers+1,self.field_size)
+        self.field_state.reset(points)
 
-    def predict(self, partial_obs):
-        # get the full obs
-        obs = to_xcoded_number(self.field_state.get_full_obs(partial_obs),self.field_size)
-        # get the avail_actions
-        avail_actions = self.field_state.get_avail_actions()
+    def sample(self,obs):
+        # update the field_state and get the full obs
+        full_obs,conflict=self.field_state.get_full_obs(obs)
+        if conflict:
+            return [5,5,5],conflict
+        else:
+            # get the avail_actions of the three preyers by completed full obs
+            avail_actions = self.field_state.get_avail_actions()
+            # predict the action of the agent
+            full_obs=to_xcoded_number(full_obs,self.field_size)
+            predicted_actions,done,info=self.predict(full_obs,avail_actions)
+            return predicted_actions,conflict
+
+    def predict(self, obs, avail_actions):
         Q_list = self.Q[obs, :]
         Q_list = Q_list + avail_actions*100
         maxQ = np.max(Q_list)
         action_list = np.where(Q_list == maxQ)[0]  # maxQ可能对应多个action
-        action = np.random.choice(action_list)
-        return action
+        action = action_list[0] # actions of the 3 preyers, which is a xcoded number
+        
+        # use the action predicted to update the field_state
+        actions=num2acts(action,self.N_preyers,5)
+        actions_real=[[2,4,5,6,8][act] for act in actions]
+        obs,reward,done,info = self.field_state.step(actions_real)
+        return actions,done,info
 
     def learn(self, obs, action, reward, next_obs, done):
         """ off-policy

@@ -36,7 +36,8 @@ class BattleField(Env):
     def reset(self):
         # randomly put the preyers and the elephant on the field
         points=self.sample_points()
-        while points[0]==self.ele_goal:
+        # if the elephant is at the goal or the preyers are at the same position, sample again
+        while (points[0]==self.ele_goal or len(set(points))<self.N_preyers+1):
             points=self.sample_points()
 
         # assgin the initial position of the elephant and the preyers
@@ -86,14 +87,15 @@ class BattleField(Env):
                 status='crashed'
                 print('ERROR! Preyer Crashes!')
                 break
-        
-        obs=[self.ele_pos]+self.preyers_pos
-        # update the elephant's position
-        act_ele=self.ele_agent.sample(obs)
-        ele_pos_new=self.get_x_y('ele',self.ele_pos,act_ele)
-        self.ele_pos=ele_pos_new
-
+            
+        if not status=='crashed':
+            obs=[self.ele_pos]+self.preyers_pos
+            # update the elephant's position
+            act_ele=self.ele_agent.sample(obs)
+            ele_pos_new=self.get_x_y('ele',self.ele_pos,act_ele)
+            self.ele_pos=ele_pos_new
         return status
+
 
 
     def if_done(self,status):
@@ -303,5 +305,6 @@ class FieldWrapper:
 
     def render(self):
         self.env.render()
+    
     
     

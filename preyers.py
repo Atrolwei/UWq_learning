@@ -1,6 +1,6 @@
 import enum
 from agents_base import Agent
-from field_state import FieldState,Player
+from field_state import FieldState
 import random
 import copy
 
