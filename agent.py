@@ -82,8 +82,7 @@ class QLearningTacitAgent(object):
         self.last_predicted_actions=None
 
     def unify(self,obs):    # obs here is the full obs which can be got by communication
-        points=to_points(obs,self.N_preyers+1,self.field_size)
-        self.field_state.reset(points)
+        self.field_state.reset(obs)
 
     def sample(self,obs):
         # update the field_state and get the full obs
@@ -94,11 +93,11 @@ class QLearningTacitAgent(object):
             # get the avail_actions of the three preyers by completed full obs
             avail_actions = self.field_state.get_avail_actions()
             # predict the action of the agent
-            full_obs=to_xcoded_number(full_obs,self.field_size)
             predicted_actions,done,info=self.predict(full_obs,avail_actions)
             return predicted_actions,conflict
 
     def predict(self, obs, avail_actions):
+        obs=to_xcoded_number(obs,self.field_size)
         Q_list = self.Q[obs, :]
         Q_list = Q_list + avail_actions*100
         maxQ = np.max(Q_list)
@@ -109,7 +108,7 @@ class QLearningTacitAgent(object):
         actions=num2acts(action,self.N_preyers,5)
         actions_real=[[2,4,5,6,8][act] for act in actions]
         obs,reward,done,info = self.field_state.step(actions_real)
-        return actions,done,info
+        return actions_real,done,info
 
     def learn(self, obs, action, reward, next_obs, done):
         """ off-policy

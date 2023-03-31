@@ -7,7 +7,7 @@ from scipy.spatial import distance
 from env_base import Env
 from elephant import Elephant
 from preyers import Preyer
-from utils import to_xcoded_number, num2dot,num2acts
+from utils import num2dot,num2acts
 
 
 class BattleField(Env):
@@ -284,20 +284,13 @@ class FieldWrapper:
 
     def reset(self):
         points=self.env.reset()
-        # transform the position of the elephant and the preyers to a xcoded number
-        xcoded_number=to_xcoded_number(points,self.field_size,16)
-        return xcoded_number
+        return points
     
     def step(self,action):
-        # the action of the preyers
-        act_preyers=num2acts(action,self.N_preyers,5)
-        act_preyers=[[2,4,5,6,8][act] for act in act_preyers]
-        obs,reward,done,info=self.env.step(act_preyers)
-        # transform the position of the elephant and the preyers to a xcoded number
+        obs,reward,done,info=self.env.step(action)
         if 'Crash!' in info:
             return None,reward,done,info
         else:
-            obs=to_xcoded_number(obs,self.field_size,16)
             return obs,reward,done,info
         
     def get_avail_agent_actions(self):

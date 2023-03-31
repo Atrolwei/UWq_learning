@@ -1,8 +1,8 @@
 import time
-
+import copy
 from battle_field import BattleField,FieldWrapper
 from agent import QLearningTacitAgent
-from utils import to_points,acts2num
+
 
 def test_episode(env, agents):
     step=0
@@ -21,20 +21,20 @@ def test_episode(env, agents):
             unify_flag=False
 
         # make the partial obs
-        partial_obs=to_points(obs,env.N_preyers+1,env.field_size,16)[0]
+        partial_obs=obs[0]
         # sample actions and step
         actions=[]
         for idx in range(env.N_preyers):
             predicted_actions,conflict=agents[idx].sample(partial_obs)     # give only the observation of the elephant to the agent
-            actions.append(predicted_actions[idx])
             if conflict:
                 print(f'Conflict at step {step}')
+                actions.append(5)
                 unify_flag=True
-                break
+                continue
+            else:
+                actions.append(predicted_actions[idx])
 
-        # actions=[0,0,0], the action of the preyers here is the real action, not the xcoded number
-        action=acts2num(actions,xcimal=5)
-        next_obs, reward, done, _ = env.step(action)
+        next_obs, reward, done, _ = env.step(actions)
         step+=1
 
         total_reward += reward
@@ -65,35 +65,17 @@ def main():
         learning_rate=0.1,
         gamma=0.8,
         e_greed=0.2)
-    preyer1.restore()
+    preyer1.restore('./q_table.npy')
     agents.append(preyer1)
 
-    preyer2=QLearningTacitAgent(
-        obs_n=env.n_obss,
-        act_n=env.n_actions,
-        field_size=field_size,
-        N_preyers=N_preyers,
-        ele_goal=ele_goal,
-        learning_rate=0.1,
-        gamma=0.8,
-        e_greed=0.2)
-    preyer2.restore()
+    preyer2=copy.deepcopy(preyer1)
     agents.append(preyer2)
 
-    preyer3=QLearningTacitAgent(
-        obs_n=env.n_obss,
-        act_n=env.n_actions,
-        field_size=field_size,
-        N_preyers=N_preyers,
-        ele_goal=ele_goal,
-        learning_rate=0.1,
-        gamma=0.8,
-        e_greed=0.2)
-    preyer3.restore()
+    preyer3=copy.deepcopy(preyer1)
     agents.append(preyer3)
 
 
-    # num_of_test
+    # test some rounds for average reward
     num_of_test = 10
     total_reward = 0
     for _ in range(num_of_test):
